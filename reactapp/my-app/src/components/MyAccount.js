@@ -51,7 +51,6 @@ const MyAccount = () => {
             <br></br>
             <br></br>
             <br></br>
-            {/* Additional content and placeholder text */}
         </div>
     );
 };

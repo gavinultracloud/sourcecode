@@ -4,16 +4,6 @@ import { useNavigate } from 'react-router-dom';
 const AboutUs = () => {
     const navigate = useNavigate();
 
-    // Function to navigate to the login page
-    const navigateToLogin = () => {
-        navigate('/login');
-    };
-
-    // Function to navigate to the register page
-    const navigateToRegister = () => {
-        navigate('/register');
-    };
-
     return (
         <div className="container mt-5 text-center">
             <img src={`${process.env.PUBLIC_URL}/AudITech.png`} alt="AudITech Logo" className="mb-4" style={{ maxWidth: '150px' }} />

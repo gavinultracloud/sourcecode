@@ -26,6 +26,7 @@ app.config['JWT_SECRET_KEY'] = '7ebb0fc376c3b114376cc79789f997eb'
 
 jwt = JWTManager(app)
 
+# Database connection properties to PostgreSQL was hardcoded for simplicity due to demo application - I would never do this for production env
 db_config = {
     'dbname': 'apigithub',
     'user': 'postgres',
@@ -34,19 +35,18 @@ db_config = {
     'port': '5432'
 }
 
-
+# Make screenshots available to React app
 @app.route('/screenshots/<filename>')
 def serve_screenshot(filename):
     path = f'/home/auditech/screenshots/{filename}'
     return send_file(path, mimetype='image/png')
 
-
+# Create screenshots
 def take_screenshot(pull_request_url, screenshot_path):
     chrome_options = Options()
-    chrome_options.add_argument("--headless")  # Run Chrome in headless mode.
-    chrome_options.add_argument('--no-sandbox')  # Bypass OS security model
-    chrome_options.add_argument('--disable-dev-shm-usage')  # Overcome limited resource problems
-
+    chrome_options.add_argument("--headless") 
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-dev-shm-usage')
     chromedriver_path = '/usr/local/bin/chromedriver-linux64/chromedriver'
     chrome_service = Service(executable_path=chromedriver_path)
 
@@ -58,6 +58,7 @@ def take_screenshot(pull_request_url, screenshot_path):
     finally:
         driver.quit()
 
+# API Endpoint to monitor the webhooks from GitHub
 @ns.route('/github')
 class GitHubWebhook(Resource):
     def post(self):
@@ -103,7 +104,7 @@ class GitHubWebhook(Resource):
 
         return {'message': 'Webhook Received & Processed'}
 
-
+# API endpoint to test DB connection, it connects, creates and table and then drops the table
 @ns.route('/test_db_connection')
 class TestDBConnection(Resource):
     def get(self):
@@ -136,7 +137,7 @@ email_model = ns.model('Email', {
     'recipient': fields.String(required=True, description='The recipient email address'),
 })
 
-
+# Email functionaily.
 @ns.route('/send-test-email')
 class SendTestEmail(Resource):
     @ns.expect(email_model, validate=True)
@@ -153,7 +154,7 @@ class SendTestEmail(Resource):
         except Exception as e:
             return {"error": str(e)}, 500
 
-
+# This initiates a pull from the demo repo to the local repo on the ubuntu22.04 system that runs the Python and React apps
 @ns.route('/manual_pull_repo')
 class ManualPullRepo(Resource):
     def get(self):
@@ -192,7 +193,6 @@ class ManualPullRepo(Resource):
             conn.close()
         except Exception as e:
             print(f"Failed to log the manual pull request: {e}")
-            # Optionally, update the response to indicate database logging failed
             response["response"] += f" Logging to database failed: {e}"
 
         return (response)
@@ -202,7 +202,7 @@ login_model = api.model('Login', {
     'password': fields.String(required=True, description='The user password', example='string'),
 })
 
-
+# API endpoint for React application to be able to login
 @ns.route('/login')
 class Login(Resource):
     @ns.expect(login_model, validate=True)
@@ -249,11 +249,10 @@ class Login(Resource):
 
         return (response)
 
-# Define the model for user email input
+# API Endpoint for React app to retrieve the users details to display on My-Account page of React app
 user_email_model = ns.model('UserEmail', {
     'emailAddress': fields.String(required=True, description='The user email address')
 })
-
 @ns.route('/get_user_details')
 class GetUserDetails(Resource):
     @ns.expect(user_email_model, validate=True)
@@ -284,7 +283,7 @@ class GetUserDetails(Resource):
                 cur.close()
                 conn.close()
 
-
+# API Endpoint to allow new user account registrations on React App
 @ns.route('/register')
 class Register(Resource):
     @ns.expect(api.model('Register', {
@@ -310,14 +309,13 @@ class Register(Resource):
             cur.close()
             conn.close()
 
-
+# API Endpoint for Monitor page of React app to access the info in the Db retrieved from the webhooks received from Github
 @ns.route('/pull_request_logs')
 class PullRequestLogs(Resource):
     def get(self):
         try:
             conn = psycopg2.connect(**db_config)
             cur = conn.cursor()
-            # Update the SELECT statement to fetch new fields
             cur.execute("""
                 SELECT event_type, title, state, pull_request_id, pull_request_url, screenshot_path, received_at
                 FROM github_notifications
@@ -341,9 +339,8 @@ class PullRequestLogs(Resource):
                 cur.close()
                 conn.close()
 
-
+# Purpose of this is to creat pull and commit requests for actual data on GitHub
 os.environ['GIT_SSH_COMMAND'] = 'ssh -i /root/.ssh/id_rsa -o IdentitiesOnly=yes'
-
 def git_pull_edit_commit_push():
     repo_path = "/home/auditech/repos/apigithub"
     git_url = "git@github.com/gavinultracloud/AudITech.git"
